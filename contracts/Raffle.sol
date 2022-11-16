@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.7;
 
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+
 error Raffle__SendMoreToEnter();
 error Raffle__RaffleNotOpen();
 error Raffle__UpkeepNotTrue();
@@ -20,11 +22,32 @@ contract Raffle{
     address payable[] s_players;
     uint256 public s_lastTimestamp;
 
+    //using the imported interface to create a type
+    VRFCoordinatorV2Interface public immutable i_vrfCoordinator;
+    //chainlink variables
+    bytes32 public i_gasLane;
+    uint64 public i_subscriptionId;
+    uint32 public i_callbackGasLimit;
+
+    uint16 public constant REQUEST_CONFIRMATIONS = 3;
+    uint32 public constant NUM_WORDS = 1;
+
     event RaffleEnter(address indexed player);
 
-    constructor(uint256 entranceFee, uint256 interval){
+    constructor(
+        uint256 entranceFee,
+        uint256 interval,
+        address vrfCoordinatorV2,
+        bytes32 gasLane, //keyhash 
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+        ){
         i_entranceFee = entranceFee;
         i_interval = interval;
+        i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
+        i_gasLane = gasLane;
+        i_subscriptionId = subscriptionId ;
+        i_callbackGasLimit = callbackGasLimit;
     }
     function enterRaffle() external payable{
         //ensure payment to enter raffle is equal to raffle amount
