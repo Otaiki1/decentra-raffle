@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 
 error Raffle__SendMoreToEnter();
 error Raffle__RaffleNotOpen();
+error Raffle__UpkeepNotTrue();
 
 contract Raffle{
     
@@ -40,11 +41,11 @@ contract Raffle{
         emit RaffleEnter(msg.sender);   
     }
 
-    //a function that checks whether its time for randomness
+    //a function that checks whether its time for finding winners
     function checkUpkeep(bytes memory /*checkData */) 
         public view returns(
             bool upkeepNeeded,
-            bytes memory /* performDate */
+            bytes memory /* performData */
         )
         {
             bool isOpen = RaffleState.Open == s_raffleState;
@@ -56,5 +57,13 @@ contract Raffle{
             return(upkeepNeeded, "0x0");
         }
 
+    // a function that performs the process of finding winners
+    function performUpkeep(bytes calldata /* performData */ ) external {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if(!upkeepNeeded){
+            revert Raffle__UpkeepNotTrue();
+        }
+        s_raffleState = RaffleState.Calculating;
+    }
     
 }
