@@ -3,12 +3,14 @@
 pragma solidity ^0.8.7;
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 error Raffle__SendMoreToEnter();
 error Raffle__RaffleNotOpen();
 error Raffle__UpkeepNotTrue();
+error Raffle__TransferFailed();
 
-contract Raffle{
+contract Raffle is VRFConsumerBaseV2 {
     
     enum RaffleState{
         Open,
@@ -21,6 +23,7 @@ contract Raffle{
     //an array of all players
     address payable[] s_players;
     uint256 public s_lastTimestamp;
+    address payable s_recentWinner;
 
     //using the imported interface to create a type
     VRFCoordinatorV2Interface public immutable i_vrfCoordinator;
@@ -34,6 +37,7 @@ contract Raffle{
 
     event RaffleEnter(address indexed player);
     event RequestedRaffleWinner(uint256 indexed requestId);
+    event WinnerPicked(address indexed winner);
 
     constructor(
         uint256 entranceFee,
@@ -42,7 +46,7 @@ contract Raffle{
         bytes32 gasLane, //keyhash 
         uint64 subscriptionId,
         uint32 callbackGasLimit
-        ){
+        )VRFConsumerBaseV2(vrfCoordinatorV2){
         i_entranceFee = entranceFee;
         i_interval = interval;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
@@ -97,7 +101,30 @@ contract Raffle{
             NUM_WORDS);
         emit RequestedRaffleWinner(requestId);
     }
-    
+
+    function fulfillRandomWords(
+        uint256, /* requestId */
+        uint256[] memory randomWords
+    ) internal override{
+        
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+        address payable recentWinner = s_players[indexOfWinner];
+
+        //update state variables
+        s_recentWinner = recentWinner;
+        s_players = new address payable[](0);
+        s_raffleState = RaffleState.Open;
+        s_lastTimestamp = block.timestamp;
+
+        //Make payment
+        (bool success, ) =  recentWinner.call{value: address(this).balance}("");
+        //check 
+        if(!success){
+            revert Raffle__TransferFailed();
+        }
+
+        emit WinnerPicked(recentWinner);
+    }
    
     
 }
