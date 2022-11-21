@@ -87,6 +87,13 @@ contract Raffle{
             revert Raffle__UpkeepNotTrue();
         }
         s_raffleState = RaffleState.Calculating;
+        //getting the random number
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+            i_gasLane,
+            i_subscriptionId, 
+            REQUEST_CONFIRMATIONS, 
+            i_callbackGasLimit, 
+            NUM_WORDS);
     }
     
 }
