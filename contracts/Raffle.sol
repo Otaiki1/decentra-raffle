@@ -33,6 +33,7 @@ contract Raffle{
     uint32 public constant NUM_WORDS = 1;
 
     event RaffleEnter(address indexed player);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFee,
@@ -87,6 +88,16 @@ contract Raffle{
             revert Raffle__UpkeepNotTrue();
         }
         s_raffleState = RaffleState.Calculating;
+        //getting the random number
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+            i_gasLane,
+            i_subscriptionId, 
+            REQUEST_CONFIRMATIONS, 
+            i_callbackGasLimit, 
+            NUM_WORDS);
+        emit RequestedRaffleWinner(requestId);
     }
+    
+   
     
 }
