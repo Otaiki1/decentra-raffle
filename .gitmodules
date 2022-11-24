@@ -1,0 +1,3 @@
+[submodule "decentra-raffle-frontend"]
+	path = decentra-raffle-frontend
+	url = git@github.com:Otaiki1/decentra-raffle-frontend.git
